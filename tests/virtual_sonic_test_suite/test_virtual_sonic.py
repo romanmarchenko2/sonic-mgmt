@@ -146,7 +146,6 @@ class TestSonicAsicMethods:
             add_member_result = sonic_asic.config_portchannel_member(portchannel_name, interface_name, op="add")
             pytest_assert(add_member_result["rc"] == 0, "Failed to add member to portchannel")
         except Exception as e:
-            restore_topology_on_failure(duthost)
             pytest.fail(f"Portchannel setup failed: {e}")
 
         yield portchannel_name, interface_name
@@ -158,7 +157,6 @@ class TestSonicAsicMethods:
             del_result = sonic_asic.config_portchannel(portchannel_name, op="del")
             pytest_assert(del_result["rc"] == 0, "Failed to delete portchannel")
         except Exception as e:
-            restore_topology_on_failure(duthost)
             pytest.fail(f"Portchannel teardown failed: {e}")
 
     def test_portchannel_member_present(self, portchannel_setup, duthosts, rand_one_dut_hostname, enum_frontend_asic_index):
@@ -206,7 +204,7 @@ class TestSonicAsicMethods:
         elif topo_name == "t1-16":
             expected_ifaces = 16
         else:
-            pytest.skip(f"Topology {topo_type} not supported for this test")
+            pytest.skip(f"Topology {topo_name} name is not supported for this test")
 
         pytest_assert(active_ifaces == expected_ifaces, f"Expected {expected_ifaces} active interfaces, got {active_ifaces}")
     
