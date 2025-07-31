@@ -23,7 +23,7 @@ class TestAnsibleModules:
         4. find: Finds list of files based on specified criteria.
         5. fetch: Retrieve files from the DUT to the test host.
         6. file: Copies file from remote host to local host.
-        7. bgp_facts: Retreives BGP information using Quagga.
+        7. bgp_facts: Retrieves BGP information using Quagga.
         8. acl_facts: Retrieves ACL information from remote host.
         9. image_facts: Get information on image from remote host.
         10. feature_facts: Provides the statuses for all active features on a host.
@@ -55,7 +55,7 @@ class TestAnsibleModules:
         # Copy local file to DUT
         duthost.copy(src=local_temp_file_path, dest=remote_copy_path)
 
-        # Verify that copiend file exist on DUT
+        # Verify that copied file exist on DUT
         copy_stat = duthost.stat(path=remote_copy_path)["stat"]
         pytest_assert(copy_stat["exists"], f"{remote_copy_path} is not exists on DUT")
         
@@ -192,10 +192,10 @@ class TestSonicAsicMethods:
         iface_status = sonic_asic.show_interface(command="status")['ansible_facts']['int_status']
         active_ifaces = sum(1 for intf, data in iface_status.items() if data["admin_state"] == "up")
 
-        topo_type = tbinfo["topo"]["type"]
-        if topo_type == "t0":
+        topo_name = tbinfo["topo"]["name"]
+        if topo_name == "t0":
             expected_ifaces = 8
-        elif topo_type in "t1-16":
+        elif topo_name == "t1-16":
             expected_ifaces = 16
         else:
             pytest.skip(f"Topology {topo_type} not supported for this test")
