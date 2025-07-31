@@ -132,26 +132,34 @@ class TestSonicAsicMethods:
         10. command(): Runs commands specified for the ASIC calling the method.
     """
     @pytest.fixture(scope="function")
-    def portchannel_setup(self, duthosts, rand_one_dut_hostname, enum_frontend_asic_index):
+    def portchannel_setup(self, duthosts, rand_one_dut_hostname, enum_frontend_asic_index, restore_topology_on_failure):
         duthost = duthosts[rand_one_dut_hostname]
         sonic_asic = duthost.asic_instance(asic_index=enum_frontend_asic_index)
 
         portchannel_name = "PortChannel0001"
         interface_name = "Ethernet32"
 
-        add_result = sonic_asic.config_portchannel(portchannel_name, op="add")
-        pytest_assert(add_result["rc"] == 0, "Failed to add portchannel in setup")
+        try:
+            add_result = sonic_asic.config_portchannel(portchannel_name, op="add")
+            pytest_assert(add_result["rc"] == 0, "Failed to add portchannel in setup")
 
-        add_member_result = sonic_asic.config_portchannel_member(portchannel_name, interface_name, op="add")
-        pytest_assert(add_member_result["rc"] == 0, "Failed to add member to portchannel")
+            add_member_result = sonic_asic.config_portchannel_member(portchannel_name, interface_name, op="add")
+            pytest_assert(add_member_result["rc"] == 0, "Failed to add member to portchannel")
+        except Exception as e:
+            restore_topology_on_failure(duthost)
+            pytest.fail(f"Portchannel setup failed: {e}")
 
         yield portchannel_name, interface_name
 
-        del_member_result = sonic_asic.config_portchannel_member(portchannel_name, interface_name, op="del")
-        pytest_assert(del_member_result["rc"] == 0, "Failed to delete member from portchannel")
+        try:
+            del_member_result = sonic_asic.config_portchannel_member(portchannel_name, interface_name, op="del")
+            pytest_assert(del_member_result["rc"] == 0, "Failed to delete member from portchannel")
 
-        del_result = sonic_asic.config_portchannel(portchannel_name, op="del")
-        pytest_assert(del_result["rc"] == 0, "Failed to delete portchannel")
+            del_result = sonic_asic.config_portchannel(portchannel_name, op="del")
+            pytest_assert(del_result["rc"] == 0, "Failed to delete portchannel")
+        except Exception as e:
+            restore_topology_on_failure(duthost)
+            pytest.fail(f"Portchannel teardown failed: {e}")
 
     def test_portchannel_member_present(self, portchannel_setup, duthosts, rand_one_dut_hostname, enum_frontend_asic_index):
         logging.info("Testing portchannel member presence")
