@@ -132,12 +132,19 @@ class TestSonicAsicMethods:
         10. command(): Runs commands specified for the ASIC calling the method.
     """
     @pytest.fixture(scope="function")
-    def portchannel_setup(self, duthosts, rand_one_dut_hostname, enum_frontend_asic_index, restore_topology_on_failure):
+    def portchannel_setup(self, duthosts, rand_one_dut_hostname, enum_frontend_asic_index, tbinfo, restore_topology_on_failure):
         duthost = duthosts[rand_one_dut_hostname]
         sonic_asic = duthost.asic_instance(asic_index=enum_frontend_asic_index)
 
         portchannel_name = "PortChannel0001"
-        interface_name = "Ethernet32"
+
+        topo_name = tbinfo["topo"]["name"]
+        if topo_name == "t0":
+            interface_name = "Ethernet100"
+        elif topo_name == "t1-16":
+            interface_name = "Ethernet32"
+        else:
+            pytest.skip(f"Topology {topo_name} name is not supported for this test")
 
         try:
             add_result = sonic_asic.config_portchannel(portchannel_name, op="add")
@@ -168,8 +175,8 @@ class TestSonicAsicMethods:
         pytest_assert(sonic_asic.portchannel_on_asic(portchannel_name), "Portchannel was not found")
 
     @pytest.mark.parametrize("interface,expected_status", [
-        ("Ethernet0", "up"),
-        ("Ethernet32", "down")
+        ("Ethernet4", "up"),
+        ("Ethernet8", "up")
     ])
     def test_interface_status(self, duthosts, rand_one_dut_hostname, enum_frontend_asic_index, interface, expected_status, tbinfo):
         logging.info("Testing interfaces states")
@@ -200,7 +207,7 @@ class TestSonicAsicMethods:
 
         topo_name = tbinfo["topo"]["name"]
         if topo_name == "t0":
-            expected_ifaces = 8
+            expected_ifaces = 32
         elif topo_name == "t1-16":
             expected_ifaces = 16
         else:
@@ -208,7 +215,7 @@ class TestSonicAsicMethods:
 
         pytest_assert(active_ifaces == expected_ifaces, f"Expected {expected_ifaces} active interfaces, got {active_ifaces}")
     
-    def test_ping_v4(self, duthosts, rand_one_dut_hostname, enum_frontend_asic_index, ip_address="10.0.0.5"):
+    def test_ping_v4(self, duthosts, rand_one_dut_hostname, enum_frontend_asic_index, ip_address="10.250.0.101"):
         logging.info(f"Testing ping to {ip_address}")
         duthost = duthosts[rand_one_dut_hostname]
         sonic_asic = duthost.asic_instance(asic_index=enum_frontend_asic_index)
